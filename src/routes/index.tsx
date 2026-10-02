@@ -58,10 +58,7 @@ function ClaimPage() {
     const matchesFilter = filter === "Flags & Warnings" || item.status === filter;
     return matchesFilter && `${item.question} ${item.detail}`.toLowerCase().includes(search.toLowerCase());
   }), [filter, search]);
-  const jump = (next: Section) => {
-    setSection(next);
-    document.getElementById("dossier-content")?.scrollIntoView({ behavior: "smooth", block: "start" });
-  };
+  const selectedStep = queryStep === null ? undefined : steps[queryStep];
 
   return (
     <main className="min-h-screen bg-canvas pb-24 text-foreground">
@@ -84,7 +81,7 @@ function ClaimPage() {
             </div>
           </section>
           <section className="flex flex-col justify-between bg-card p-7 sm:p-10" aria-label="Patient Information">
-            <div className="flex items-center justify-between border-b border-border pb-5"><h2 className="font-display text-2xl">Patient Information</h2><span className="text-xs font-bold">01 / 04</span></div>
+            <div className="flex items-center justify-between border-b border-border pb-5"><h2 className="font-display text-2xl">Patient Information</h2></div>
             <div className="py-7"><p className="text-xs uppercase text-ink-soft">Patient Information</p><p className="mt-2 font-display text-4xl leading-tight">Elena Smith</p><p className="mt-1 text-sm text-ink-soft">(28y, Female)</p></div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-5 border-t border-border pt-6 text-sm">
               <div><p className="mb-2 text-xs text-ink-soft">Policy Number</p><p className="font-semibold">#INS-2026-00389</p></div>
@@ -134,7 +131,7 @@ function ClaimPage() {
         </section>
         <div className="mt-10 flex items-center justify-between border-t border-foreground/25 pt-5 text-xs font-bold"><span>Claim Reference: CLM-94021</span><Button variant="editorialGhost" className="rounded-none text-xs" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>Claim Overview <ArrowDown className="rotate-180" /></Button></div>
       </div>
-      {queryStep !== null && <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/50 p-4 sm:items-center" onMouseDown={(event) => { if (event.target === event.currentTarget) setQueryStep(null); }}><div role="dialog" aria-modal="true" aria-labelledby="query-title" className="w-full max-w-lg bg-card p-7 shadow-xl sm:p-9"><div className="flex items-start justify-between gap-4"><span className="text-[11px] font-bold uppercase tracking-widest">Recommended next steps</span><Button variant="editorialGhost" size="icon" aria-label="Close" className="-mt-2 -mr-2 rounded-none" onClick={() => setQueryStep(null)}><X /></Button></div><h2 id="query-title" className="mt-7 font-display text-3xl">{steps[queryStep].title}</h2><p className="mt-4 text-sm leading-relaxed text-ink-soft">{steps[queryStep].body}</p><div className="mt-8 border-t border-border pt-5 text-sm"><span className="font-bold">Suggested: </span>{steps[queryStep].suggested}</div><Button variant="editorial" className="mt-8 h-11 w-full rounded-none" onClick={() => setQueryStep(null)}><Check />{steps[queryStep].suggested}</Button></div></div>}
+      {selectedStep && <div className="fixed inset-0 z-50 flex items-end justify-center bg-foreground/50 p-4 sm:items-center" onMouseDown={(event) => { if (event.target === event.currentTarget) setQueryStep(null); }}><div role="dialog" aria-modal="true" aria-labelledby="query-title" className="w-full max-w-lg bg-card p-7 shadow-xl sm:p-9"><div className="flex items-start justify-between gap-4"><span className="text-[11px] font-bold uppercase tracking-widest">Recommended next steps</span><Button variant="editorialGhost" size="icon" aria-label="Close" className="-mt-2 -mr-2 rounded-none" onClick={() => setQueryStep(null)}><X /></Button></div><h2 id="query-title" className="mt-7 font-display text-3xl">{selectedStep.title}</h2><p className="mt-4 text-sm leading-relaxed text-ink-soft">{selectedStep.body}</p><div className="mt-8 border-t border-border pt-5 text-sm"><span className="font-bold">Suggested: </span>{selectedStep.suggested}</div><Button variant="editorial" className="mt-8 h-11 w-full rounded-none" onClick={() => setQueryStep(null)}><Check />{selectedStep.suggested}</Button></div></div>}
     </main>
   );
 }
