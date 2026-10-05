@@ -63,8 +63,8 @@ function ClaimPage() {
   return (
     <main className="min-h-screen bg-canvas pb-24 text-foreground">
       <div className="mx-auto max-w-[1440px] px-5 pt-6 sm:px-8 lg:px-14 lg:pt-9">
-        <div className="mb-5 flex items-center justify-between border-b border-foreground/20 pb-3 text-[10px] font-bold uppercase tracking-widest sm:text-xs">
-          <span>Claim Overview</span><span>Claim Reference: CLM-94021</span>
+        <div className="mb-5 flex items-center justify-end border-b border-foreground/20 pb-3 text-[10px] font-bold uppercase tracking-widest sm:text-xs">
+          <span>Claim Reference: CLM-94021</span>
         </div>
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)]">
           <section className="flex min-h-[350px] flex-col justify-between bg-card p-7 sm:p-10 lg:p-12" aria-label="Patient Information">
@@ -79,8 +79,7 @@ function ClaimPage() {
             <div className="mt-7 flex items-center justify-between border-t border-border pt-4 text-xs"><span className="text-ink-soft">Adjudication Tier</span><span className="font-bold">High Risk Dossier</span></div>
           </section>
           <section className="flex min-h-[350px] flex-col justify-between bg-primary p-7 sm:p-10">
-            <div className="flex items-start justify-between gap-4">
-              <span className="text-xs font-bold uppercase tracking-widest">Claim Overview</span>
+            <div className="flex justify-end">
               <span className="rounded-full border border-foreground px-3 py-1 text-[11px] font-bold uppercase">Overall Risk: High</span>
             </div>
             <h1 className="font-display text-4xl leading-[.95] sm:text-5xl">Claim<br />Overview<span className="inline-block align-top text-xl">↗</span></h1>
