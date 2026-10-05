@@ -82,10 +82,11 @@ function ClaimPage() {
             <div className="flex justify-end">
               <span className="rounded-full border border-foreground px-3 py-1 text-[11px] font-bold uppercase">Overall Risk: High</span>
             </div>
-            <h1 className="font-display text-4xl leading-[.95] sm:text-5xl">Claim<br />Overview<span className="inline-block align-top text-xl">↗</span></h1>
-            <div className="flex items-end justify-between gap-4">
-              <p className="max-w-[230px] text-sm leading-relaxed">High overall risk detected with 87% confidence, requiring immediate human investigation.</p>
-              <div className="shrink-0 text-right"><div className="font-display text-6xl leading-none sm:text-7xl">87<span className="text-3xl">%</span></div><div className="mt-2 text-xs font-bold uppercase tracking-widest">Risk Probability</div></div>
+            <h1 className="mt-9 font-display text-4xl leading-[.95] sm:text-5xl">Claim<br />Overview<span className="inline-block align-top text-xl">↗</span></h1>
+            <p className="mt-6 max-w-[260px] text-sm leading-relaxed">High overall risk detected with 87% confidence, requiring immediate human investigation.</p>
+            <div className="mt-auto border-t border-foreground/25 pt-6">
+              <div className="font-display text-6xl leading-none sm:text-7xl">87<span className="text-3xl">%</span></div>
+              <div className="mt-3 text-xs font-bold uppercase tracking-widest">Risk Probability</div>
             </div>
           </section>
         </div>
