@@ -67,22 +67,9 @@ function ClaimPage() {
           <span>Claim Overview</span><span>Claim Reference: CLM-94021</span>
         </div>
         <div className="grid gap-5 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,.65fr)]">
-          <section className="flex min-h-[350px] flex-col justify-between bg-primary p-7 sm:p-10 lg:p-12">
-            <div className="flex items-start justify-between gap-4">
-              <span className="text-xs font-bold uppercase tracking-widest">Claim Overview</span>
-              <span className="rounded-full border border-foreground px-3 py-1 text-[11px] font-bold uppercase">Overall Risk: High</span>
-            </div>
-            <div className="mt-14 flex flex-col items-start justify-between gap-8 sm:flex-row sm:items-end">
-              <div>
-                <h1 className="font-display text-5xl font-medium leading-[.95] sm:text-6xl lg:text-[76px]">Claim<br />Overview<span className="inline-block align-top text-2xl">↗</span></h1>
-                <p className="mt-8 max-w-md text-sm leading-relaxed">High overall risk detected with 87% confidence, requiring immediate human investigation.</p>
-              </div>
-              <div className="shrink-0 text-left sm:text-right"><div className="font-display text-7xl leading-none sm:text-8xl">87<span className="text-4xl">%</span></div><div className="mt-2 text-xs font-bold uppercase tracking-widest">Risk Probability</div></div>
-            </div>
-          </section>
-          <section className="flex flex-col justify-between bg-card p-7 sm:p-10" aria-label="Patient Information">
+          <section className="flex min-h-[350px] flex-col justify-between bg-card p-7 sm:p-10 lg:p-12" aria-label="Patient Information">
             <div className="flex items-center justify-between border-b border-border pb-5"><h2 className="font-display text-2xl">Patient Information</h2></div>
-            <div className="py-7"><p className="text-xs uppercase text-ink-soft">Patient Information</p><p className="mt-2 font-display text-4xl leading-tight">Elena Smith</p><p className="mt-1 text-sm text-ink-soft">(28y, Female)</p></div>
+            <div className="py-8 lg:py-12"><p className="text-xs uppercase text-ink-soft">Patient Information</p><p className="mt-3 font-display text-5xl leading-tight sm:text-6xl">Elena Smith</p><p className="mt-2 text-sm text-ink-soft">(28y, Female)</p></div>
             <div className="grid grid-cols-2 gap-x-5 gap-y-5 border-t border-border pt-6 text-sm">
               <div><p className="mb-2 text-xs text-ink-soft">Policy Number</p><p className="font-semibold">#INS-2026-00389</p></div>
               <div><p className="mb-2 text-xs text-ink-soft">Total Claimed</p><p className="font-display text-xl">₹1,42,500</p></div>
@@ -90,6 +77,17 @@ function ClaimPage() {
               <div><p className="mb-2 text-xs text-ink-soft">Hospitalization Stay</p><p className="font-semibold">14 Feb 2026 – 18 Feb 2026<br />(4 days)</p></div>
             </div>
             <div className="mt-7 flex items-center justify-between border-t border-border pt-4 text-xs"><span className="text-ink-soft">Adjudication Tier</span><span className="font-bold">High Risk Dossier</span></div>
+          </section>
+          <section className="flex min-h-[350px] flex-col justify-between bg-primary p-7 sm:p-10">
+            <div className="flex items-start justify-between gap-4">
+              <span className="text-xs font-bold uppercase tracking-widest">Claim Overview</span>
+              <span className="rounded-full border border-foreground px-3 py-1 text-[11px] font-bold uppercase">Overall Risk: High</span>
+            </div>
+            <h1 className="font-display text-4xl leading-[.95] sm:text-5xl">Claim<br />Overview<span className="inline-block align-top text-xl">↗</span></h1>
+            <div className="flex items-end justify-between gap-4">
+              <p className="max-w-[230px] text-sm leading-relaxed">High overall risk detected with 87% confidence, requiring immediate human investigation.</p>
+              <div className="shrink-0 text-right"><div className="font-display text-6xl leading-none sm:text-7xl">87<span className="text-3xl">%</span></div><div className="mt-2 text-xs font-bold uppercase tracking-widest">Risk Probability</div></div>
+            </div>
           </section>
         </div>
 
