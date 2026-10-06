@@ -9,4 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep the claim dossier as a single client-side page with local-only disclosure and selection interactions; the supplied claim text is static and no claim actions are connected to a service.
+- Keep Wrute content in shared browser-safe data and use separate file-based routes for home, work, services, studio, contact and project details so every major destination is directly shareable.
+- Keep concept projects explicitly identified; contact controls prepare a message in the visitor's email app rather than implying a connected submission service.
