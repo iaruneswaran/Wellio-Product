@@ -9,4 +9,5 @@
 > the editor, so keep the branch in a working state.
 <!-- LOVABLE:END -->
 
-- Keep the claim dossier as a single client-side page with local-only disclosure and selection interactions; the supplied claim text is static and no claim actions are connected to a service.
+- Render chat using AI Elements primitives with browser-only UIMessage thread storage and route-derived thread IDs; this keeps saved conversations isolated and deep-linkable.
+- Keep this chat a presentation-only workspace until AI integration is requested; never fabricate model responses or connect services for a visual-only request.
