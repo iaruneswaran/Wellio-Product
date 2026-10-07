@@ -4,8 +4,8 @@ import { chatMeta } from "@/lib/chat-store";
 export const Route = createFileRoute("/chat/$threadId")({
   head: () =>
     chatMeta(
-      "Your conversation — Wrute Chat",
-      "Your personal Wrute conversation workspace, with chats saved on this device.",
+      "Your conversation — Wellio Chat",
+      "Your personal Wellio conversation workspace, with chats saved on this device.",
     ),
   component: ThreadPage,
 });

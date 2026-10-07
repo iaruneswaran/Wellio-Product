@@ -1,9 +1,11 @@
 import type { UIMessage } from "ai";
 export type ChatThread = { id: string; title: string; updatedAt: number; messages: UIMessage[] };
-const key = "wrute-chat-threads-v1";
+const key = "wellio-chat-threads-v1";
+const legacyKey = "wrute-chat-threads-v1";
 export function loadThreads(): ChatThread[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(key) || "[]");
+    const raw = localStorage.getItem(key) ?? localStorage.getItem(legacyKey) ?? "[]";
+    const value: unknown = JSON.parse(raw);
     return Array.isArray(value)
       ? value.filter(
           (t): t is ChatThread =>

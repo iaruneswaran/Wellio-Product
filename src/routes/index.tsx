@@ -4,8 +4,8 @@ import { chatMeta } from "@/lib/chat-store";
 export const Route = createFileRoute("/")({
   head: () =>
     chatMeta(
-      "Wrute Chat — A space for your ideas",
-      "A light, thoughtful conversation workspace from Wrute. Start an idea and keep your conversations together.",
+      "Wellio Chat — A space for your ideas",
+      "A light, thoughtful conversation workspace from Wellio. Start an idea and keep your conversations together.",
     ),
   component: ChatHome,
 });
