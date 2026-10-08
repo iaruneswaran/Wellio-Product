@@ -155,7 +155,7 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
 
             let sum = 0;
             for (let i = 0; i < dataArray.length; i++) {
-              sum += dataArray[i];
+              sum += dataArray[i] ?? 0;
             }
             const avg = sum / dataArray.length;
             const norm = Math.min(1, avg / 35);
