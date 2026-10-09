@@ -25,4 +25,3 @@ export default defineConfig(({ command }) => ({
     command === "build" ? nitro() : null,
   ].filter(Boolean),
 }));
-

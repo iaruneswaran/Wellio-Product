@@ -1,3 +1,2 @@
 - Render chat using AI Elements primitives with browser-only UIMessage thread storage and route-derived thread IDs; this keeps saved conversations isolated and deep-linkable.
 - Keep this chat a presentation-only workspace until AI integration is requested; never fabricate model responses or connect services for a visual-only request.
-

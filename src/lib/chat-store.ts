@@ -1,5 +1,12 @@
 import type { UIMessage } from "ai";
-export type ChatThread = { id: string; title: string; updatedAt: number; messages: UIMessage[] };
+export type ChatThread = {
+  id: string;
+  title: string;
+  updatedAt: number;
+  messages: UIMessage[];
+  platformId?: string;
+  agentCategory?: string;
+};
 const key = "wellio-chat-threads-v1";
 const legacyKey = "wrute-chat-threads-v1";
 export function loadThreads(): ChatThread[] {
@@ -19,12 +26,14 @@ export function loadThreads(): ChatThread[] {
 export function saveThreads(threads: ChatThread[]) {
   localStorage.setItem(key, JSON.stringify(threads));
 }
-export function createThread(): ChatThread {
+export function createThread(platformId?: string, agentCategory?: string): ChatThread {
   return {
     id: crypto.randomUUID(),
-    title: "New conversation",
+    title: agentCategory ? `${agentCategory}` : "New conversation",
     updatedAt: Date.now(),
     messages: [],
+    platformId,
+    agentCategory,
   };
 }
 export const chatMeta = (title: string, description: string) => ({
