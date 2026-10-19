@@ -10,12 +10,12 @@ import {
   Download,
   MessageSquare,
   Mic,
+  MicOff,
   PanelLeft,
   Paperclip,
   PenLine,
   Search,
   Share2,
-  Square,
   Trash2,
   Volume2,
   X,
@@ -81,7 +81,7 @@ function Brand({ small = false }: { small?: boolean }) {
   );
 }
 
-function PurpleNoiseOrb({
+function BlueGradientOrb({
   convState,
   waveBars,
 }: {
@@ -89,85 +89,121 @@ function PurpleNoiseOrb({
   waveBars: number[];
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const convStateRef = useRef(convState);
+  convStateRef.current = convState;
+  const waveBarsRef = useRef(waveBars);
+  waveBarsRef.current = waveBars;
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     let animId: number;
     let time = 0;
+    let smoothedEnergy = 0;
 
     const render = () => {
-      // Very smooth, slow organic drift
-      time += 0.006;
+      const state = convStateRef.current;
+      const baseSpeed = state === "speaking" ? 0.018 : state === "thinking" ? 0.014 : 0.010;
+      time += baseSpeed;
+
       const width = canvas.width;
       const height = canvas.height;
       const cx = width / 2;
       const cy = height / 2;
+      const maxR = Math.min(width, height) / 2;
 
-      // Gentle audio energy modulation
-      let energy = 0;
-      if (waveBars.length > 0) {
-        const sum = waveBars.reduce((acc, v) => acc + v, 0);
-        energy = Math.min(0.8, (sum / waveBars.length) / 16);
+      // Smooth audio energy interpolation (eliminates any jerky jumps)
+      const bars = waveBarsRef.current;
+      let targetEnergy = 0;
+      if (bars && bars.length > 0) {
+        const sum = bars.reduce((acc, v) => acc + v, 0);
+        targetEnergy = Math.min(0.35, (sum / bars.length) / 24);
       }
-      if (convState === "speaking") energy = 0.3 + Math.sin(time * 1.5) * 0.15;
-      if (convState === "thinking") energy = 0.18 + Math.sin(time * 1.0) * 0.1;
+      if (state === "speaking") targetEnergy = Math.max(targetEnergy, 0.18 + Math.sin(time * 1.5) * 0.06);
+      if (state === "thinking") targetEnergy = Math.max(targetEnergy, 0.12 + Math.sin(time * 1.2) * 0.04);
+      smoothedEnergy += (targetEnergy - smoothedEnergy) * 0.08;
 
-      // 1. Base vertical gradient: top deeper violet, bottom slightly bright
-      const baseGrad = ctx.createLinearGradient(0, 0, 0, height);
-      baseGrad.addColorStop(0, "#4830CB"); // Top: deep electric violet
-      baseGrad.addColorStop(0.45, "#5B42E4"); // Mid: rich purple
-      baseGrad.addColorStop(1, "#836CFB"); // Bottom: slightly bright luminous violet
+      ctx.clearRect(0, 0, width, height);
+
+      // 1. Primary diagonal linear gradient sweeping widely across the circle
+      const angle = -0.32 + Math.sin(time * 0.5) * 0.28;
+      const cosA = Math.cos(angle);
+      const sinA = Math.sin(angle);
+
+      const driftX = Math.cos(time * 0.45) * (maxR * 0.35);
+      const driftY = Math.sin(time * 0.55) * (maxR * 0.35) + smoothedEnergy * 4;
+      const startX = cx + driftX;
+      const startY = cy + driftY;
+
+      const span = maxR * 1.45;
+      const x0 = startX - sinA * span;
+      const y0 = startY - cosA * span;
+      const x1 = startX + sinA * span;
+      const y1 = startY + cosA * span;
+
+      const baseGrad = ctx.createLinearGradient(x0, y0, x1, y1);
+      baseGrad.addColorStop(0.0, "#2b6ff2"); // Crisp vibrant azure blue at top
+      baseGrad.addColorStop(0.28, "#4282f6"); // Rich sky blue
+      baseGrad.addColorStop(0.48, "#78aef9"); // Soft smooth transition into light
+      baseGrad.addColorStop(0.68, "#adcffc"); // Soft periwinkle light
+      baseGrad.addColorStop(0.88, "#9ec3fa"); // Calm lower blue
+      baseGrad.addColorStop(1.0, "#91b9f7"); // Base periwinkle bottom
       ctx.fillStyle = baseGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 2. Bottom-focused luminous glow (light bottom slightly bright)
-      const sx1 = cx + Math.sin(time * 0.7) * (18 + energy * 6);
-      const sy1 = height - 8 + Math.cos(time * 0.5) * 3; // Centered near the bottom
-      const bottomGrad = ctx.createRadialGradient(sx1, sy1, 4, cx, height - 6, 85 + energy * 8);
-      bottomGrad.addColorStop(0, "#9A85FE"); // Soft bright lilac-violet along bottom
-      bottomGrad.addColorStop(0.35, "#826DF6"); // Luminous purple
-      bottomGrad.addColorStop(0.7, "#6047E8"); // Electric violet
-      bottomGrad.addColorStop(1, "rgba(72, 48, 203, 0)"); // Fades towards the top
-      ctx.fillStyle = bottomGrad;
+      // 2. Luminous white cloud traveling widely across the upper & right areas
+      const l1X = cx + Math.sin(time * 0.7) * (maxR * 0.55);
+      const l1Y = cy - 6 + Math.cos(time * 0.55) * (maxR * 0.45) - smoothedEnergy * 4;
+      const l1Radius = maxR * (0.95 + Math.sin(time * 0.8) * 0.15 + smoothedEnergy * 0.2);
+
+      const glowGrad = ctx.createRadialGradient(l1X, l1Y, 0, l1X, l1Y, l1Radius);
+      glowGrad.addColorStop(0.0, "rgba(255, 255, 255, 0.95)"); // Pure white luminous center
+      glowGrad.addColorStop(0.25, "rgba(255, 255, 255, 0.82)"); // Broad white glow
+      glowGrad.addColorStop(0.48, "rgba(225, 239, 255, 0.55)"); // Soft light-blue aura
+      glowGrad.addColorStop(0.72, "rgba(168, 204, 252, 0.22)"); // Feathered transition
+      glowGrad.addColorStop(1.0, "rgba(168, 204, 252, 0.0)"); // Fully seamless transparent edge
+      ctx.fillStyle = glowGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 3. Subtle bottom inner rim contour glow
-      const rimGrad = ctx.createLinearGradient(0, height - 16, 0, height);
-      rimGrad.addColorStop(0, "rgba(165, 148, 254, 0)");
-      rimGrad.addColorStop(1, "rgba(180, 165, 255, 0.45)");
-      ctx.fillStyle = rimGrad;
-      ctx.fillRect(0, height - 16, width, 16);
+      // 3. Secondary luminous glow traveling widely across the lower & left areas
+      const l2X = cx + Math.cos(time * 0.6 + 2.1) * (maxR * 0.55);
+      const l2Y = cy + 10 + Math.sin(time * 0.7 + 1.2) * (maxR * 0.45);
+      const l2Radius = maxR * (0.9 + Math.cos(time * 0.75) * 0.15);
 
-      // 4. Subtle secondary horizontal sheen drift
-      const sx2 = cx + Math.cos(time * 0.6) * 22;
-      const sy2 = height * 0.65 + Math.sin(time * 0.75) * 4;
-      const grad2 = ctx.createRadialGradient(sx2, sy2, 2, sx2, sy2, 44);
-      grad2.addColorStop(0, "rgba(152, 137, 253, 0.35)");
-      grad2.addColorStop(0.55, "rgba(118, 95, 246, 0.15)");
-      grad2.addColorStop(1, "rgba(91, 67, 236, 0)");
-      ctx.fillStyle = grad2;
+      const secGrad = ctx.createRadialGradient(l2X, l2Y, 0, l2X, l2Y, l2Radius);
+      secGrad.addColorStop(0.0, "rgba(255, 255, 255, 0.55)");
+      secGrad.addColorStop(0.35, "rgba(220, 238, 255, 0.35)");
+      secGrad.addColorStop(0.7, "rgba(168, 204, 252, 0.12)");
+      secGrad.addColorStop(1.0, "rgba(168, 204, 252, 0.0)");
+      ctx.fillStyle = secGrad;
       ctx.fillRect(0, 0, width, height);
 
-      // 5. Authentic fine stardust noise grain matching reference image
-      const imgData = ctx.getImageData(0, 0, width, height);
-      const data = imgData.data;
-      const len = data.length;
-      const noiseLevel = 18; // Clean, uniform stardust noise grain
+      // 4. Third fluid light bloom spreading diagonally across corners
+      const l3X = cx + Math.sin(time * 0.45 + 4.0) * (maxR * 0.5);
+      const l3Y = cy + Math.cos(time * 0.65 + 3.0) * (maxR * 0.48);
+      const l3Radius = maxR * (0.85 + Math.sin(time * 0.55) * 0.12);
 
-      for (let i = 0; i < len; i += 4) {
-        const grain = (Math.random() - 0.5) * noiseLevel;
-        const r = data[i] ?? 0;
-        const g = data[i + 1] ?? 0;
-        const b = data[i + 2] ?? 0;
-        data[i] = Math.max(0, Math.min(255, r + grain * 0.85));
-        data[i + 1] = Math.max(0, Math.min(255, g + grain * 0.85));
-        data[i + 2] = Math.max(0, Math.min(255, b + grain * 1.15));
-      }
-      ctx.putImageData(imgData, 0, 0);
+      const l3Grad = ctx.createRadialGradient(l3X, l3Y, 0, l3X, l3Y, l3Radius);
+      l3Grad.addColorStop(0.0, "rgba(240, 247, 255, 0.65)");
+      l3Grad.addColorStop(0.38, "rgba(210, 230, 255, 0.30)");
+      l3Grad.addColorStop(0.75, "rgba(154, 195, 251, 0.10)");
+      l3Grad.addColorStop(1.0, "rgba(154, 195, 251, 0.0)");
+      ctx.fillStyle = l3Grad;
+      ctx.fillRect(0, 0, width, height);
+
+      // 5. Azure sky depth wash swaying across the upper perimeter
+      const washX = cx + Math.cos(time * 0.4) * (maxR * 0.45);
+      const washY = Math.sin(time * 0.5) * (maxR * 0.3);
+      const topGrad = ctx.createRadialGradient(washX, washY, 0, cx, cy, maxR * 1.35);
+      topGrad.addColorStop(0.0, "rgba(43, 111, 242, 0.75)");
+      topGrad.addColorStop(0.38, "rgba(56, 125, 246, 0.35)");
+      topGrad.addColorStop(0.72, "rgba(56, 125, 246, 0.0)");
+      topGrad.addColorStop(1.0, "rgba(56, 125, 246, 0.0)");
+      ctx.fillStyle = topGrad;
+      ctx.fillRect(0, 0, width, height);
 
       animId = requestAnimationFrame(render);
     };
@@ -176,17 +212,19 @@ function PurpleNoiseOrb({
     return () => {
       if (animId) cancelAnimationFrame(animId);
     };
-  }, [convState, waveBars]);
+  }, []);
 
   return (
     <canvas
       ref={canvasRef}
-      width={160}
-      height={72}
+      width={192}
+      height={192}
       className="size-full rounded-full object-cover pointer-events-none"
     />
   );
 }
+
+const PurpleNoiseOrb = BlueGradientOrb;
 
 function generateAnswer(query: string, agentCategory?: string, _platformId?: string): string {
   const q = query.trim().toLowerCase();
@@ -504,8 +542,10 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
   const [liveVoiceTranscript, setLiveVoiceTranscript] = useState("");
   const [aiSpeakingSnippet, setAiSpeakingSnippet] = useState("");
   const [dictationText, setDictationText] = useState("");
+  const [isVoiceMuted, setIsVoiceMuted] = useState(false);
   const voiceModeRef = useRef<"idle" | "dictation" | "conversation">("idle");
   const convStateRef = useRef<"listening" | "thinking" | "speaking">("listening");
+  const isVoiceMutedRef = useRef(false);
   const autoSendTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null);
@@ -600,6 +640,11 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
             return;
           }
           micStreamRef.current = stream;
+          if (isVoiceMutedRef.current) {
+            stream.getAudioTracks().forEach((track) => {
+              track.enabled = false;
+            });
+          }
           const AudioCtx =
             window.AudioContext ||
             (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -649,6 +694,11 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
             }
 
             // Normal microphone frequency data
+            if (isVoiceMutedRef.current) {
+              setWaveBars(new Array(68).fill(3));
+              animFrameRef.current = requestAnimationFrame(updateWave);
+              return;
+            }
             analyser.getByteFrequencyData(dataArray);
 
             let sum = 0;
@@ -887,15 +937,23 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
     stopVoiceSession();
     setVoiceMode("conversation");
     voiceModeRef.current = "conversation";
+    setIsVoiceMuted(true);
+    isVoiceMutedRef.current = true;
     setConvState("listening");
     convStateRef.current = "listening";
     setLiveVoiceTranscript("");
     setAiSpeakingSnippet("");
+    if (micStreamRef.current) {
+      micStreamRef.current.getAudioTracks().forEach((track) => {
+        track.enabled = false;
+      });
+    }
 
     startConversationRecognition();
   }
 
   function startConversationRecognition() {
+    if (isVoiceMutedRef.current) return;
     const win = window as unknown as {
       SpeechRecognition?: new () => SpeechRecognitionInstance;
       webkitSpeechRecognition?: new () => SpeechRecognitionInstance;
@@ -910,7 +968,7 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
         recognition.lang = "en-US";
 
         recognition.onresult = (event: SpeechRecognitionEventLike) => {
-          if (convStateRef.current !== "listening") return;
+          if (convStateRef.current !== "listening" || isVoiceMutedRef.current) return;
           let transcript = "";
           for (let i = event.resultIndex; i < event.results.length; i++) {
             transcript += event.results[i]?.[0]?.transcript ?? "";
@@ -1058,6 +1116,8 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
       }
       recognitionRef.current = null;
     }
+    setIsVoiceMuted(false);
+    isVoiceMutedRef.current = false;
     setVoiceMode("idle");
     voiceModeRef.current = "idle";
     setConvState("listening");
@@ -1385,16 +1445,61 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
     threadId && active && (active.agentCategory || active.messages.length > 0),
   );
 
+  const toggleVoiceMute = () => {
+    setIsVoiceMuted((prev) => {
+      const next = !prev;
+      isVoiceMutedRef.current = next;
+      if (micStreamRef.current) {
+        micStreamRef.current.getAudioTracks().forEach((track) => {
+          track.enabled = !next;
+        });
+      }
+      if (!next) {
+        startConversationRecognition();
+      } else {
+        if (recognitionRef.current) {
+          try {
+            recognitionRef.current.stop();
+          } catch {
+            // ignore
+          }
+        }
+      }
+      return next;
+    });
+  };
+
   const renderComposer = () => (
     <div className="w-full">
+      {/* Centered round blue gradient animation orb floating above composer */}
+      <AnimatePresence>
+        {voiceMode === "conversation" && (
+          <motion.div
+            key="voice-orb-display"
+            initial={{ opacity: 0, scale: 0.75, y: 14 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.75, y: 14 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="mb-7 flex w-full justify-center"
+          >
+            <div className="relative size-20 sm:size-24 shrink-0 overflow-hidden rounded-full shadow-sm">
+              <BlueGradientOrb
+                convState={convState}
+                waveBars={isVoiceMuted ? [] : waveBars}
+              />
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.div
         initial={false}
         animate={{
-          height: voiceMode === "dictation" ? 50 : 120,
-          borderRadius: voiceMode === "dictation" ? 25 : 4,
+          height: voiceMode !== "idle" ? 50 : 120,
+          borderRadius: voiceMode !== "idle" ? 25 : 16,
         }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="chat-card relative w-full overflow-hidden border border-border bg-card shadow-xs"
+        className="chat-card relative w-full overflow-hidden rounded-[16px] border border-border bg-card shadow-xs"
         style={{ willChange: "height, border-radius" }}
       >
         {/* Action 1: Voice Dictation listening view (Full width wave animation) */}
@@ -1407,7 +1512,7 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
             pointerEvents: voiceMode === "dictation" ? "auto" : "none",
           }}
           transition={{ duration: 0.22, ease: "easeInOut" }}
-          className="absolute inset-0 flex h-full w-full items-center justify-between px-4 sm:px-5"
+          className="absolute inset-0 flex h-full w-full items-center justify-between pl-4 pr-2 sm:pl-5 sm:pr-2.5"
           aria-hidden={voiceMode !== "dictation"}
         >
           <div className="flex h-full flex-1 items-center justify-center overflow-hidden pr-2">
@@ -1428,9 +1533,9 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
             onClick={() => handleStopDictation(true)}
             aria-label="Stop recording and send"
             title="Stop recording and send"
-            className="flex size-7 cursor-pointer items-center justify-center rounded-full bg-foreground text-background transition-transform active:scale-90"
+            className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-blue-600 text-white shadow-xs transition-all hover:bg-blue-500 active:scale-95"
           >
-            <span className="size-2 rounded-xs bg-background" />
+            <X className="size-4.5 stroke-[2.5]" />
           </button>
         </motion.div>
 
@@ -1445,177 +1550,202 @@ export function ChatScreen({ threadId }: { threadId?: string }) {
           transition={{ duration: 0.2 }}
           className="chat-composer flex h-full flex-col justify-between"
         >
-          <PromptInput
-            onSubmit={() => send(draft)}
-            className="flex h-full flex-col justify-between border-0 bg-transparent p-0 shadow-none"
-          >
-            <PromptInputTextarea
-              ref={textarea}
-              value={draft}
-              onChange={(e) => setDraft(e.target.value)}
-              placeholder={
-                voiceMode === "conversation"
-                  ? convState === "speaking"
-                    ? "Wellio is responding…"
-                    : convState === "thinking"
-                      ? "Thinking…"
-                      : liveVoiceTranscript
-                        ? `"${liveVoiceTranscript}"`
-                        : "Listening to you… speak anytime"
-                  : active?.agentCategory
-                    ? `Ask ${active.agentCategory} intelligence…`
-                    : "Ask anything or describe your task…"
-              }
-              aria-label="Message prompt"
-              className="min-h-[44px] flex-1 resize-none border-0 bg-transparent px-3.5 pt-3 text-sm text-foreground placeholder:text-ink-soft focus-visible:ring-0"
-              onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
-                  e.preventDefault();
-                  send(draft);
+          {voiceMode === "conversation" ? (
+            /* Compact small-height pill view in conversation mode (no attach icon, typing field + mic + blue close) */
+            <div className="flex h-full w-full items-center justify-between pl-4 pr-2 sm:pl-5 sm:pr-2.5">
+              <input
+                ref={textarea as unknown as React.RefObject<HTMLInputElement>}
+                type="text"
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder={
+                  isVoiceMuted
+                    ? "Microphone is muted — click mic to speak, or type here…"
+                    : convState === "speaking"
+                      ? "Wellio is responding…"
+                      : convState === "thinking"
+                        ? "Thinking…"
+                        : liveVoiceTranscript
+                          ? `"${liveVoiceTranscript}"`
+                          : "Listening to you… speak anytime"
                 }
-              }}
-            />
-
-            {/* Display attached files if any */}
-            {attachments.length > 0 && (
-              <div className="flex flex-wrap gap-1.5 px-3.5 pb-1">
-                {attachments.map((file, idx) => (
-                  <div
-                    key={idx}
-                    className="inline-flex items-center gap-1.5 rounded border border-border bg-surface-soft px-2 py-0.5 text-xs text-foreground"
-                  >
-                    <span className="max-w-[140px] truncate">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => removeAttachment(idx)}
-                      className="cursor-pointer text-ink-soft hover:text-foreground"
-                      aria-label={`Remove ${file.name}`}
-                    >
-                      <X className="size-3" />
-                    </button>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <PromptInputFooter className="mt-auto flex items-center justify-between border-0 bg-transparent px-3 pb-2 pt-0">
-              {/* Left side: Attach option */}
-              <div className="flex items-center">
+                aria-label="Message prompt"
+                className="flex-1 border-0 bg-transparent p-0 text-sm leading-normal text-foreground placeholder:text-ink-soft focus:outline-none focus:ring-0"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    if (draft.trim()) {
+                      const text = draft;
+                      setDraft("");
+                      handleConversationQuery(text);
+                    }
+                  }
+                }}
+              />
+              <div className="ml-2 flex shrink-0 items-center gap-2">
+                {/* Action 1: Mic toggle button (mute / unmute) - naked icon, no circle */}
                 <button
                   type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="inline-flex size-9 cursor-pointer items-center justify-center rounded-[4px] text-ink-soft transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  title="Attach file"
-                  aria-label="Attach file"
+                  onClick={toggleVoiceMute}
+                  title={isVoiceMuted ? "Unmute microphone" : "Mute microphone"}
+                  aria-label={isVoiceMuted ? "Unmute microphone" : "Mute microphone"}
+                  className="inline-flex size-8 cursor-pointer items-center justify-center border-0 bg-transparent text-foreground transition-all hover:opacity-75 active:scale-90"
                 >
-                  <Paperclip className="size-4.5" />
+                  {isVoiceMuted ? (
+                    <MicOff className="h-[20px] w-[20px] text-ink-soft" />
+                  ) : (
+                    <Mic className="h-[20px] w-[20px] text-foreground" />
+                  )}
                 </button>
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  multiple
-                  className="hidden"
-                  onChange={handleFileChange}
-                />
-              </div>
 
-              {/* Right side: 60px yellow noise animation + stop icon in conversation mode, or send/voice buttons */}
-              <div className="flex items-center">
-                <AnimatePresence mode="wait">
-                  {voiceMode === "conversation" ? (
-                    <motion.div
-                      key="conv-voice-controls"
-                      initial={{ scale: 0.85, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.85, opacity: 0 }}
-                      transition={{ duration: 0.18 }}
-                      className="flex items-center gap-2"
+                {/* Action 2: Round blue close button with white X icon */}
+                <button
+                  type="button"
+                  onClick={stopVoiceSession}
+                  title="Close voice conversation"
+                  aria-label="Close voice conversation"
+                  className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full bg-blue-600 text-white shadow-xs transition-all hover:bg-blue-500 active:scale-95"
+                >
+                  <X className="size-4 stroke-[2.5]" />
+                </button>
+              </div>
+            </div>
+          ) : (
+            <PromptInput
+              onSubmit={() => send(draft)}
+              className="flex h-full flex-col justify-between border-0 bg-transparent p-0 shadow-none"
+            >
+              <PromptInputTextarea
+                ref={textarea}
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                placeholder={
+                  active?.agentCategory
+                    ? `Ask ${active.agentCategory} intelligence…`
+                    : "Ask anything or describe your task…"
+                }
+                aria-label="Message prompt"
+                className="min-h-[44px] flex-1 resize-none border-0 bg-transparent px-3.5 pt-3 text-sm text-foreground placeholder:text-ink-soft focus-visible:ring-0"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    send(draft);
+                  }
+                }}
+              />
+
+              {/* Display attached files if any */}
+              {attachments.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 px-3.5 pb-1">
+                  {attachments.map((file, idx) => (
+                    <div
+                      key={idx}
+                      className="inline-flex items-center gap-1.5 rounded border border-border bg-surface-soft px-2 py-0.5 text-xs text-foreground"
                     >
-                      {/* Left side: Stop icon button */}
+                      <span className="max-w-[140px] truncate">{file.name}</span>
                       <button
                         type="button"
-                        onClick={stopVoiceSession}
-                        title="Stop voice conversation"
-                        aria-label="Stop voice conversation"
-                        className="group inline-flex size-9 cursor-pointer items-center justify-center rounded-[4px] border border-border bg-card text-foreground transition-all hover:border-foreground/40 hover:bg-surface-soft active:scale-95"
+                        onClick={() => removeAttachment(idx)}
+                        className="cursor-pointer text-ink-soft hover:text-foreground"
+                        aria-label={`Remove ${file.name}`}
                       >
-                        <Square className="size-3.5 fill-foreground text-foreground transition-transform group-hover:scale-90" />
+                        <X className="size-3" />
                       </button>
-
-                      {/* Same position: 36px height & 80px width, full radius curved capsule (effect strictly inside only, no outer shadow) */}
-                      <div
-                        className="relative h-[36px] w-[80px] shrink-0 overflow-hidden rounded-full border border-[#836CFB]/80"
-                        title="Voice conversation active"
-                        aria-label="Voice conversation active"
-                      >
-                        <PurpleNoiseOrb convState={convState} waveBars={waveBars} />
-                      </div>
-                    </motion.div>
-                  ) : canSend ? (
-                    <motion.div
-                      key="send-option-btn"
-                      initial={{ scale: 0.85, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      exit={{ scale: 0.85, opacity: 0 }}
-                      transition={{ duration: 0.15 }}
-                    >
-                      <PromptInputSubmit
-                        status={isThinking ? "submitted" : "ready"}
-                        disabled={!canSend || !ready}
-                        aria-label="Send message"
-                        className="size-10 shrink-0 rounded-[4px] shadow-none"
-                      >
-                        <ArrowUp className="size-5" />
-                      </PromptInputSubmit>
-                    </motion.div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
-                      {/* Action 1: Voice to Text (Dictate & Send) */}
-                      <motion.button
-                        key="dictate-btn"
-                        type="button"
-                        initial={{ scale: 0.85, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.85, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        onClick={startDictation}
-                        title="Voice to text (dictate and send)"
-                        aria-label="Voice to text"
-                        className="inline-flex size-9 cursor-pointer items-center justify-center rounded-[4px] text-ink-soft transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      >
-                        <Mic className="size-4.5" />
-                      </motion.button>
-
-                      {/* Action 2: Voice-to-Voice AI Conversation */}
-                      <motion.button
-                        key="start-voice-btn"
-                        type="button"
-                        initial={{ scale: 0.85, opacity: 0 }}
-                        animate={{ scale: 1, opacity: 1 }}
-                        exit={{ scale: 0.85, opacity: 0 }}
-                        transition={{ duration: 0.15 }}
-                        onClick={startVoiceToVoice}
-                        title="Voice conversation"
-                        aria-label="Voice conversation"
-                        className="group inline-flex size-9 cursor-pointer items-center justify-center rounded-[4px] text-ink-soft transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                      >
-                        <div
-                          className="flex h-5 items-center justify-center gap-[2.5px]"
-                          aria-hidden="true"
-                        >
-                          <span className="h-[6px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
-                          <span className="h-[12px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
-                          <span className="h-[18px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
-                          <span className="h-[12px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
-                          <span className="h-[6px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
-                        </div>
-                      </motion.button>
                     </div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </PromptInputFooter>
-          </PromptInput>
+                  ))}
+                </div>
+              )}
+
+              <PromptInputFooter className="mt-auto flex items-center justify-between border-0 bg-transparent px-3 pb-2 pt-0">
+                {/* Left side: Attach option */}
+                <div className="flex items-center">
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    className="inline-flex size-9 cursor-pointer items-center justify-center rounded-[4px] text-ink-soft transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                    title="Attach file"
+                    aria-label="Attach file"
+                  >
+                    <Paperclip className="size-4.5" />
+                  </button>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    multiple
+                    className="hidden"
+                    onChange={handleFileChange}
+                  />
+                </div>
+
+                {/* Right side: send/voice buttons */}
+                <div className="flex items-center">
+                  <AnimatePresence mode="wait">
+                    {canSend ? (
+                      <motion.div
+                        key="send-option-btn"
+                        initial={{ scale: 0.85, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.85, opacity: 0 }}
+                        transition={{ duration: 0.15 }}
+                      >
+                        <PromptInputSubmit
+                          status={isThinking ? "submitted" : "ready"}
+                          disabled={!canSend || !ready}
+                          aria-label="Send message"
+                          className="size-10 shrink-0 rounded-[4px] shadow-none"
+                        >
+                          <ArrowUp className="size-5" />
+                        </PromptInputSubmit>
+                      </motion.div>
+                    ) : (
+                      <div className="flex items-center gap-1.5">
+                        {/* Action 1: Voice to Text (Dictate & Send) */}
+                        <motion.button
+                          key="dictate-btn"
+                          type="button"
+                          initial={{ scale: 0.85, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.85, opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          onClick={startDictation}
+                          title="Voice to text (dictate and send)"
+                          aria-label="Voice to text"
+                          className="inline-flex size-9 cursor-pointer items-center justify-center rounded-[4px] text-ink-soft transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <Mic className="h-[20px] w-[20px]" />
+                        </motion.button>
+
+                        {/* Action 2: Voice-to-Voice AI Conversation */}
+                        <motion.button
+                          key="start-voice-btn"
+                          type="button"
+                          initial={{ scale: 0.85, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          exit={{ scale: 0.85, opacity: 0 }}
+                          transition={{ duration: 0.15 }}
+                          onClick={startVoiceToVoice}
+                          title="Voice conversation"
+                          aria-label="Voice conversation"
+                          className="group inline-flex size-9 cursor-pointer items-center justify-center rounded-[4px] text-ink-soft transition-colors hover:bg-surface-soft hover:text-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                        >
+                          <div
+                            className="flex h-5 items-center justify-center gap-[2.5px]"
+                            aria-hidden="true"
+                          >
+                            <span className="h-[6px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
+                            <span className="h-[12px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
+                            <span className="h-[18px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
+                            <span className="h-[12px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
+                            <span className="h-[6px] w-[2.5px] rounded-full bg-ink-soft transition-colors group-hover:bg-foreground" />
+                          </div>
+                        </motion.button>
+                      </div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </PromptInputFooter>
+            </PromptInput>
+          )}
         </motion.div>
       </motion.div>
       {storageError && (
